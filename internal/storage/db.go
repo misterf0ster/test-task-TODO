@@ -32,6 +32,6 @@ func Open(url string) (*DB, error) {
 func (db *DB) Close() {
 	if db.Psql != nil {
 		db.Psql.Close()
-		log.Println("Соединение с PostgreSQL закрыто")
+		log.Println("Closed")
 	}
 }

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"TODO/storage"
+	"TODO/internal/storage"
 	"context"
 	"strconv"
 	"time"
@@ -14,7 +14,7 @@ type Handler struct {
 }
 
 func New(db *storage.DB) *Handler {
-	return &Handler{}
+	return &Handler{db: db}
 }
 
 type Task struct {
@@ -28,10 +28,7 @@ type Task struct {
 
 // GET
 func (h *Handler) GetTasks(c *fiber.Ctx) error {
-	rows, err := h.db.Psql.Query(context.Background(), `
-		SELECT id, title, description, status, created_at, updated_at
-		FROM tasks
-	`)
+	rows, err := h.db.Psql.Query(context.Background(), `SELECT id, title, description, status, created_at, updated_at FROM tasks`)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"Status":  "Error",
@@ -61,10 +58,8 @@ func (h *Handler) PostTask(c *fiber.Ctx) error {
 	}
 
 	err := h.db.Psql.QueryRow(
-		context.Background(),
-		`INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at`,
-		t.Title, t.Description, t.Status,
-	).Scan(&t.ID, &t.CreatedAt, &t.UpdatedAt)
+		context.Background(), `INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at`,
+		t.Title, t.Description, t.Status).Scan(&t.ID, &t.CreatedAt, &t.UpdatedAt)
 
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -73,6 +68,12 @@ func (h *Handler) PostTask(c *fiber.Ctx) error {
 		})
 	}
 
+	if t.Status != "new" && t.Status != "in_progress" && t.Status != "done" {
+		return c.Status(400).JSON(fiber.Map{
+			"Status":  "Error",
+			"Message": "Invalid status",
+		})
+	}
 	return c.Status(201).JSON(t)
 }
 
@@ -115,13 +116,25 @@ func (h *Handler) PutTask(c *fiber.Ctx) error {
 
 // DELETE
 func (h *Handler) DeleteTask(c *fiber.Ctx) error {
-	id := c.Params("id")
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"Status":  "Error",
+			"Message": "Invalid ID",
+		})
+	}
 
-	_, err := h.db.Psql.Exec(context.Background(), `DELETE FROM tasks WHERE id=$1`, id)
+	result, err := h.db.Psql.Exec(context.Background(), `DELETE FROM tasks WHERE id=$1`, id)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"Status":  "Error",
 			"Message": "Could not delete",
+		})
+	}
+	if result.RowsAffected() == 0 {
+		return c.Status(404).JSON(fiber.Map{
+			"Status":  "Error",
+			"Message": "Task not found",
 		})
 	}
 

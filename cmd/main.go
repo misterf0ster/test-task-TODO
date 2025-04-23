@@ -2,27 +2,22 @@ package main
 
 import (
 	"TODO/internal/handlers"
-	"TODO/storage"
+	"TODO/internal/storage"
+	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-
-	if err := godotenv.Load("../config/.env"); err != nil {
-		panic("Ошибка загрузки файла .env: " + err.Error())
-	}
-
 	URL := os.Getenv("DATABASE_URL")
 	if URL == "" {
-		panic("DATABASE_URL no found")
+		panic("DATABASE_URL not found")
 	}
 
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
-		panic("Переменная PORT не задана")
+		panic("PORT not found")
 	}
 
 	db, err := storage.Open(URL)
@@ -42,11 +37,8 @@ func main() {
 		taskGroup.Delete("/:id", h.DeleteTask)
 	}
 
-	app.Get("/docs", func(c *fiber.Ctx) error {
-		return c.SendFile("../swagger.yaml")
-	})
-
+	log.Println("Starting server on port", PORT)
 	if err := app.Listen(":" + PORT); err != nil {
-		panic("Ошибка запуска сервера: " + err.Error())
+		panic("Server startup error: " + err.Error())
 	}
 }
