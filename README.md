@@ -28,6 +28,8 @@
 | PUT    | `/tasks/{id}` | `{"title": string, "description": string, "status": string} ` | Обновление задачи           |
 | DELETE | `/tasks/{id}` | -                                                             | Удаление задачи             |
 
+status может быть только new, in_progress, done. В противном случае выдаст ошибку.
+
 ## Как это тестировать
 
 - Установленный Docker
