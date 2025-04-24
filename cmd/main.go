@@ -37,8 +37,8 @@ func main() {
 		taskGroup.Delete("/:id", h.DeleteTask)
 	}
 
-	log.Println("Starting server on port", PORT)
+	log.Println("starting server on port", PORT)
 	if err := app.Listen(":" + PORT); err != nil {
-		panic("Server startup error: " + err.Error())
+		panic("server startup error: " + err.Error())
 	}
 }

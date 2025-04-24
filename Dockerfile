@@ -11,6 +11,6 @@ COPY . .
 
 WORKDIR /app/cmd
 
-RUN go build -o todo-app && echo "Build successful"
+RUN go build -o todo-app && echo "build successful"
 
 CMD ["/app/cmd/todo-app"]

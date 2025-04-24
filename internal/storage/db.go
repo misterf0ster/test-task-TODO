@@ -16,15 +16,15 @@ type DB struct {
 func Open(url string) (*DB, error) {
 	pool, err := pgxpool.New(context.Background(), url)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка подключения к базе данных: %w", err)
+		return nil, fmt.Errorf("database connection error: %w", err)
 	}
 
 	if err := pool.Ping(context.Background()); err != nil {
 		pool.Close()
-		return nil, fmt.Errorf("ошибка проверки соединения с базой данных: %w", err)
+		return nil, fmt.Errorf("error checking database connection: %w", err)
 	}
 
-	log.Println("Успешно подключились к PostgreSQL")
+	log.Println("successfully connected to database")
 	return &DB{Psql: pool}, nil
 }
 

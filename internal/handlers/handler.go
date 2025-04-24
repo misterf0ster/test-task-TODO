@@ -74,7 +74,10 @@ func (h *Handler) PostTask(c *fiber.Ctx) error {
 			"Message": "Invalid status",
 		})
 	}
-	return c.Status(201).JSON(t)
+	return c.Status(201).JSON(fiber.Map{
+		"Status":  "Success",
+		"message": "Task add successfully",
+	})
 }
 
 // PUT
