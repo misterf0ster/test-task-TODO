@@ -1,34 +1,26 @@
 package handlers
 
 import (
-	"TODO/internal/storage"
 	"context"
 	"strconv"
+	m "test-task-TODO/internal/models"
+	psql "test-task-TODO/storage"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type Handler struct {
-	db *storage.DB
+	db *psql.DB
 }
 
-func New(db *storage.DB) *Handler {
+func New(db *psql.DB) *Handler {
 	return &Handler{db: db}
-}
-
-type Task struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // GET
 func (h *Handler) GetTasks(c *fiber.Ctx) error {
-	rows, err := h.db.Psql.Query(context.Background(), `SELECT id, title, description, status, created_at, updated_at FROM tasks`)
+	rows, err := h.db.DB.Query(context.Background(), `SELECT id, title, description, status, created_at, updated_at FROM tasks`)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"Status":  "Error",
@@ -37,27 +29,27 @@ func (h *Handler) GetTasks(c *fiber.Ctx) error {
 	}
 	defer rows.Close()
 
-	var tasks []Task
+	var tasks []m.Task
 	for rows.Next() {
-		var t Task
+		var t m.Task
 		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.Status, &t.CreatedAt, &t.UpdatedAt); err == nil {
 			tasks = append(tasks, t)
 		}
 	}
 
-	return c.JSON(tasks)
+	return c.Status(200).JSON(tasks)
 }
 
 // POST
 func (h *Handler) PostTask(c *fiber.Ctx) error {
-	var t Task
+	var t m.Task
 	if err := c.BodyParser(&t); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"Status":  "Error",
 			"Message": "Bad request"})
 	}
 
-	err := h.db.Psql.QueryRow(
+	err := h.db.DB.QueryRow(
 		context.Background(), `INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at`,
 		t.Title, t.Description, t.Status).Scan(&t.ID, &t.CreatedAt, &t.UpdatedAt)
 
@@ -74,7 +66,7 @@ func (h *Handler) PostTask(c *fiber.Ctx) error {
 			"Message": "Invalid status",
 		})
 	}
-	return c.Status(201).JSON(fiber.Map{
+	return c.Status(200).JSON(fiber.Map{
 		"Status":  "Success",
 		"message": "Task add successfully",
 	})
@@ -84,12 +76,12 @@ func (h *Handler) PostTask(c *fiber.Ctx) error {
 func (h *Handler) PutTask(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(404).JSON(fiber.Map{
 			"Status":  "Error",
 			"Message": "Bad ID"})
 	}
 
-	var t Task
+	var t m.Task
 	if err := c.BodyParser(&t); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"Status":  "Error",
@@ -98,7 +90,7 @@ func (h *Handler) PutTask(c *fiber.Ctx) error {
 
 	t.UpdatedAt = time.Now()
 
-	_, err = h.db.Psql.Exec(
+	_, err = h.db.DB.Exec(
 		context.Background(),
 		`UPDATE tasks SET title=$1, description=$2, status=$3, updated_at=$4 WHERE id=$5`,
 		t.Title, t.Description, t.Status, t.UpdatedAt, id,
@@ -111,7 +103,7 @@ func (h *Handler) PutTask(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
+	return c.Status(200).JSON(fiber.Map{
 		"Status":  "Success",
 		"message": "Task updated successfully",
 	})
@@ -121,13 +113,13 @@ func (h *Handler) PutTask(c *fiber.Ctx) error {
 func (h *Handler) DeleteTask(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(404).JSON(fiber.Map{
 			"Status":  "Error",
 			"Message": "Invalid ID",
 		})
 	}
 
-	result, err := h.db.Psql.Exec(context.Background(), `DELETE FROM tasks WHERE id=$1`, id)
+	result, err := h.db.DB.Exec(context.Background(), `DELETE FROM tasks WHERE id=$1`, id)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"Status":  "Error",
@@ -141,7 +133,7 @@ func (h *Handler) DeleteTask(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
+	return c.Status(201).JSON(fiber.Map{
 		"Status":  "Success",
 		"Message": "Task was deleted",
 	})
