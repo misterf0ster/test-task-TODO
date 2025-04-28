@@ -5,6 +5,7 @@ import (
 	"os"
 	"test-task-TODO/internal/handlers"
 	cfg "test-task-TODO/pkg/config"
+	"test-task-TODO/pkg/logger"
 	psql "test-task-TODO/storage"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,7 +18,7 @@ func main() {
 
 	conn, err := psql.Open(url) //открываю коннект
 	if err != nil {
-		log.Fatalf("Unable to connect to db: %v\n", err)
+		logger.LogError("Unable to connect to db: %v\n", err)
 	}
 	defer conn.Close() //закрываю коннект
 
@@ -34,11 +35,11 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Printf("port not found")
+		logger.LogInfo("port not found")
 	}
 
 	log.Println("starting server on port", port)
 	if err := app.Listen(":" + port); err != nil {
-		log.Fatal("server startup error: " + err.Error())
+		log.Fatalf("server startup error: " + err.Error())
 	}
 }

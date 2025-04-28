@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"test-task-TODO/pkg/logger"
 
 	"github.com/joho/godotenv"
 )
@@ -11,7 +11,7 @@ import (
 func LoadConfig() {
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal("Error loading .env")
+		logger.LogError("Error loading .env", err)
 	}
 }
 
