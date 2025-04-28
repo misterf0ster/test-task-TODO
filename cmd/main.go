@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"os"
-	cfg "test-task-TODO/config"
 	"test-task-TODO/internal/handlers"
+	cfg "test-task-TODO/pkg/config"
 	psql "test-task-TODO/storage"
 
 	"github.com/gofiber/fiber/v2"
