@@ -1,35 +1,31 @@
 package main
 
 import (
-	"TODO/internal/handlers"
-	"TODO/internal/storage"
 	"log"
 	"os"
+	"test-task-TODO/internal/handlers"
+	cfg "test-task-TODO/pkg/config"
+	"test-task-TODO/pkg/logger"
+	psql "test-task-TODO/storage"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
-	URL := os.Getenv("DATABASE_URL")
-	if URL == "" {
-		panic("DATABASE_URL not found")
-	}
+	cfg.LoadConfig() //Подключаю конфиг
 
-	PORT := os.Getenv("PORT")
-	if PORT == "" {
-		panic("PORT not found")
-	}
+	url := cfg.PsqlCfg() //Формирую url
 
-	db, err := storage.Open(URL)
+	conn, err := psql.Open(url) //открываю коннект
 	if err != nil {
-		panic(err)
+		logger.LogError("Unable to connect to db: %v\n", err)
 	}
-	defer db.Close()
+	defer conn.Close() //закрываю коннект
 
-	h := handlers.New(db)
+	h := handlers.New(conn)
 	app := fiber.New()
 
-	taskGroup := app.Group("/task")
+	taskGroup := app.Group("/tasks")
 	{
 		taskGroup.Get("/", h.GetTasks)
 		taskGroup.Post("/", h.PostTask)
@@ -37,8 +33,13 @@ func main() {
 		taskGroup.Delete("/:id", h.DeleteTask)
 	}
 
-	log.Println("starting server on port", PORT)
-	if err := app.Listen(":" + PORT); err != nil {
-		panic("server startup error: " + err.Error())
+	port := os.Getenv("PORT")
+	if port == "" {
+		logger.LogInfo("port not found")
+	}
+
+	log.Println("starting server on port", port)
+	if err := app.Listen(":" + port); err != nil {
+		log.Fatalf("server startup error: " + err.Error())
 	}
 }

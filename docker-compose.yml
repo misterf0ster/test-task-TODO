@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: todo_db
       TZ: 'Europe/Moscow'
     volumes:
-      - ./migration/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./migration/0001_create_task_table.sql:/docker-entrypoint-initdb.d/0001_create_task_table.sql
     ports:
       - '5432:5432'
     healthcheck:
